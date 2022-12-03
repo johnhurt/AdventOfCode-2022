@@ -57,14 +57,10 @@ where
     I: Iterator<Item = String>,
 {
     input_lines
-        .chunks(3)
+        .tuples::<(String, String, String)>()
         .into_iter()
-        .map(|mut elf_trio| {
-            find_badge(
-                elf_trio.next().expect("Elf 1").as_bytes(),
-                elf_trio.next().expect("Elf 2").as_bytes(),
-                elf_trio.next().expect("Elf 3").as_bytes(),
-            )
+        .map(|(elf_1, elf_2, elf_3)| {
+            find_badge(elf_1.as_bytes(), elf_2.as_bytes(), elf_3.as_bytes())
         })
         .sum::<u32>()
 }
