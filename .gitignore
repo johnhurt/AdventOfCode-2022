@@ -1,2 +1,3 @@
 /target
-input/day_*.txt
+input/day_?.txt
+input/day_??.txt
