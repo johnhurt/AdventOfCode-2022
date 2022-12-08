@@ -10,3 +10,4 @@ paste="1.0.9"
 lazy_static="1.4.0"
 iter_tools="0.1.4"
 clap = { version = "4.0.29", features = ["derive"] }
+nom = "7.1.1"
