@@ -8,6 +8,7 @@ use nom::{
     IResult,
 };
 
+/// Parse a line of instructions into a direction tuple and a number of repeats
 fn parse_move_line(line: String) -> (u32, (i32, i32)) {
     let result: IResult<&str, (char, u32)> =
         separated_pair(anychar, many1(char(' ')), u32)(&line);
@@ -21,6 +22,9 @@ fn parse_move_line(line: String) -> (u32, (i32, i32)) {
     }
 }
 
+/// Create a closure that can be used in a `map` operation simulate the direct
+/// movement of a knot starting from 0,0. It will apply the delta given and
+/// return both the delta and the new position of the knot
 fn evaluate_moves(
     id: char,
 ) -> impl FnMut((i32, i32)) -> ((i32, i32), (i32, i32)) {
@@ -32,6 +36,11 @@ fn evaluate_moves(
     }
 }
 
+/// Create a closure that can be used in a `map` operation simulate the follow
+/// behavior of a knot starting from 0,0. It will apply the rope rules between
+/// the parent knot's position and movement to get the current knot's position
+/// and change in position. The input and output are the same so this function
+/// can be chained to simulate multiple knots in a rope
 fn follow_head(
     id: char,
 ) -> impl FnMut(((i32, i32), (i32, i32))) -> ((i32, i32), (i32, i32)) {
