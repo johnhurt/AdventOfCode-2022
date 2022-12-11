@@ -45,7 +45,7 @@ where
         .map(|c| (c - b'0') as usize)
         .expect("At least one stack guaranteed");
 
-    // Initialize the ship as a vec of empty vecs to accomodate all stack
+    // Initialize the ship as a vec of empty vecs to accommodate all stack
     // _indices_ (Ignore the zero column, so we can use the indexes specified
     // in the move instructions)
     let mut ship: Ship = vec![vec![]; max_stack_index + 1];
