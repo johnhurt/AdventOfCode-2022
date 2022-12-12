@@ -18,8 +18,10 @@ advent! {
     day 9
     day 10
     day 11
+    day 12
 }
 
 fn main() {
     run()
+    //day_12_problem_1_example()
 }

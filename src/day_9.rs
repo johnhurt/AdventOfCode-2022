@@ -169,8 +169,8 @@ fn follow_head(
     let mut curr = (0, 0);
 
     move |(delta, head)| {
-        offset_to_head.0 = offset_to_head.0 + delta.0;
-        offset_to_head.1 = offset_to_head.1 + delta.1;
+        offset_to_head.0 += delta.0;
+        offset_to_head.1 += delta.1;
 
         // If the new offset has a _single_ component diff with abs > 2, we need
         // to snap to the direction dominated by the 2.
@@ -249,7 +249,6 @@ where
         .map(|(_, p)| p)
         .unique()
         .map(|coord| visited_canvas.move_entry('#', (0, 0), coord))
-        .map(|coord| coord)
         .count();
 
     visited_canvas.render();

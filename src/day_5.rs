@@ -72,8 +72,7 @@ fn parse_move(move_line: String) -> Move {
     let mut cursor = move_line[5..].splitn(2, ' ');
     let repeats = cursor
         .next()
-        .map(|repeats_str| repeats_str.parse::<i32>().ok())
-        .flatten()
+        .and_then(|repeats_str| repeats_str.parse::<i32>().ok())
         .expect("Valid input guaranteed");
     let remainder = cursor.next().expect("Valid input guaranteed").as_bytes();
 

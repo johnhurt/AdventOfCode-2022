@@ -10,6 +10,9 @@ use nom::{
 };
 use std::{collections::HashMap, fmt::Display};
 
+/// This big type made clippy angry
+type ParseResult<'a> = IResult<&'a str, (u32, Vec<Item>, Op, i32, u32, u32)>;
+
 /// Operations a monkey can do?
 #[derive(Debug, Clone, Copy)]
 enum Op {
@@ -208,15 +211,14 @@ fn parse_false_target(input: &str) -> IResult<&'_ str, u32> {
 }
 
 fn parse_monkey(block: String) -> Monkey {
-    let parse_result: IResult<&str, (u32, Vec<Item>, Op, i32, u32, u32)> =
-        tuple((
-            parse_monkey_id,
-            parse_items,
-            alt((parse_op_literal, parse_op_reference)),
-            parse_test,
-            parse_true_target,
-            parse_false_target,
-        ))(&block);
+    let parse_result: ParseResult<'_> = tuple((
+        parse_monkey_id,
+        parse_items,
+        alt((parse_op_literal, parse_op_reference)),
+        parse_test,
+        parse_true_target,
+        parse_false_target,
+    ))(&block);
 
     let (id, items, op, modulo, t, f) = parse_result.expect("🥸").1;
 

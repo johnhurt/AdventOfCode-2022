@@ -43,7 +43,7 @@ impl Iterator for Cycle {
         (0..self.instruction.cycle_count())
             .contains(&self.inner_index)
             .then(|| {
-                let result = self.clone();
+                let result = *self;
 
                 // Progress to the next phase and instruction
                 match self.phase {
@@ -138,14 +138,14 @@ impl Sprite {
 /// Create a rendering system that is composed of a closure for drawing and a
 /// readable buffer for viewing
 fn create_renderer() -> (Rc<RefCell<Vec<char>>>, impl FnMut((Cycle, Sprite))) {
-    let buffer = Rc::new(RefCell::new(vec!['.'; 6 * 40]));
+    let buffer = Rc::new(RefCell::new(vec![' '; 6 * 40]));
 
     (buffer.clone(), move |(Cycle { number, .. }, sprite)| {
         let i = number - 1;
         let x = i % 40;
 
         if sprite.contains(x as i32) {
-            buffer.borrow_mut()[i] = '#'
+            buffer.borrow_mut()[i] = '█';
         }
     })
 }

@@ -136,7 +136,7 @@ where
 {
     let mut sizes = BTreeMap::new();
     let total_size = walk_directories!(input_lines, |dir, size| {
-        sizes.insert(size, dir.clone());
+        sizes.insert(size, dir);
     });
 
     let free_space = 70_000_000 - total_size;

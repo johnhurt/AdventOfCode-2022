@@ -35,7 +35,7 @@ where
     input_lines
         .map(parse_schedule_line)
         .filter_map(|(s_1, e_1, s_2, e_2)| {
-            (!(e_1 < s_2 || e_2 < s_1)).then(|| 1)
+            (!(e_1 < s_2 || e_2 < s_1)).then_some(1)
         })
         .sum::<i32>()
 }

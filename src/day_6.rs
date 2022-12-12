@@ -51,7 +51,7 @@ where
 
         // A unique sequence is detected if no duplicates are detected after
         // filling the buffer
-        return self.letters_consumed >= L && self.overflow_count == 0;
+        self.letters_consumed >= L && self.overflow_count == 0
     }
 }
 

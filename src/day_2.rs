@@ -40,7 +40,7 @@ impl RPS {
     fn score_p1((other, mine): (Self, Self)) -> i32 {
         use RPS::*;
         match (other, mine) {
-            (R, S) | (P, R) | (S, P) => 0 + mine as i32, // Lose
+            (R, S) | (P, R) | (S, P) => mine as i32, // Lose
             (R, R) | (P, P) | (S, S) => 3 + mine as i32, // Draw
             (R, P) | (P, S) | (S, R) => 6 + mine as i32, // Win
         }
