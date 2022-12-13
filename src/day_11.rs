@@ -2,31 +2,51 @@ use iter_tools::Itertools;
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::{anychar, char, i32, space0, space1, u32},
+    character::complete::{anychar, char, space0, space1, u128, u32},
     combinator::map,
     multi::separated_list1,
     sequence::{preceded, separated_pair, terminated, tuple},
     IResult,
 };
-use std::{collections::HashMap, fmt::Display};
+use std::fmt::Display;
 
 /// This big type made clippy angry
-type ParseResult<'a> = IResult<&'a str, (u32, Vec<Item>, Op, i32, u32, u32)>;
+type ParseResult<'a> = IResult<&'a str, (u32, Vec<Item>, Op, u128, u32, u32)>;
+
+/// Okay, so backstory. I originally did this problem by tracking the whole
+/// history of an item's stress value, so that I could do the modulo operations
+/// using the distributive property of modulo addition and multiplication.
+/// Then I saw Steve and Saxon's solution and realized I could use the property
+/// of modulo match that I hadn't though of which is:
+///
+/// (a % M) % N = a % N iff M % N == 0
+///
+/// So instead of dealing with multiple remainders for different divisors, I
+/// could do all the math with a big modulo that was a multiple of all the
+/// possible divisors used in this problem. Saxon and Steve used a specific set
+/// of divisors, but I came up with this number (that I think will also work)
+/// by finding the smallest number that had all number <= 46 as a factor.
+///
+/// The only only thing I don't like about this is using this method required
+/// going to u128 whereas the original method was done with i32s
+///
+/// 2^5 * 3 ^3 * 5^2 * 7 * 11 * 13 * 17 * 19 * 23 * 29 * 31 * 37 * 41 * 43 * 47
+const MAGIC_NUMBER: u128 = 9_419_588_158_802_421_600;
 
 /// Operations a monkey can do?
 #[derive(Debug, Clone, Copy)]
 enum Op {
-    Mul(i32),
+    Mul(u128),
     Square,
-    Add(i32),
+    Add(u128),
     Double,
 
     /// This is used to represent stress relief as real operation
-    Div(i32),
+    Div(u128),
 }
 
 impl Op {
-    fn apply(&self, lhs: i32) -> i32 {
+    fn apply(&self, lhs: u128) -> u128 {
         match self {
             Op::Add(rhs) => lhs + rhs,
             Op::Mul(rhs) => lhs * rhs,
@@ -39,76 +59,21 @@ impl Op {
 
 /// Representation of an item's stress level
 #[derive(Debug)]
-struct Item {
-    initial_value: i32,
-    direct_computation: bool,
-    history: Vec<Op>,
-
-    // This is only here to speed up the computation
-    mod_cache: HashMap<i32, i32>,
-}
+#[repr(transparent)]
+struct Item(u128);
 
 impl Item {
-    fn new(initial_value: i32) -> Self {
-        Self {
-            initial_value,
-            direct_computation: false,
-            history: vec![],
-            mod_cache: Default::default(),
-        }
+    fn new(initial_value: u128) -> Self {
+        Self(initial_value)
     }
 
-    /// Apply the given operation to this item's stress level. This operation
-    /// will update any cached modulos' values
+    /// Apply the given operation to this item's stress level.
     fn apply(&mut self, op: Op) {
-        if matches!(op, Op::Div(_)) {
-            // If the history of the item includes a divide, we cannot use the
-            // properties of modulo to calculate an answer for a big number,
-            // we have to calculate directly
-            self.direct_computation = true;
-        }
-
-        // Caching isn't useful if we are computing modulos directly
-        if !self.direct_computation {
-            self.mod_cache
-                .iter_mut()
-                .for_each(|(modulo, curr)| *curr = op.apply(*curr) % modulo);
-        }
-
-        self.history.push(op);
+        self.0 = op.apply(self.0) % MAGIC_NUMBER;
     }
 
-    fn cache_calculated_modulo(&mut self, divisor: i32) -> i32 {
-        let result = self
-            .history
-            .iter()
-            .fold(self.initial_value % divisor, |prev, op| {
-                op.apply(prev) % divisor
-            });
-
-        self.mod_cache.insert(divisor, result);
-
-        result
-    }
-
-    /// Compute the remainder of dividing this item's current stress level by
-    /// the given value. This will be done directly for part 1, but for part 2
-    /// we use the properties:
-    ///
-    /// (a + b) % N = (a % N) + (b % N)
-    /// (a * b) % N = (a % N) * (b % N)
-    ///
-    fn modulo(&mut self, divisor: i32) -> i32 {
-        if self.direct_computation {
-            let mut val = self.initial_value;
-            self.history.iter().for_each(|op| val = op.apply(val));
-            val % divisor
-        } else {
-            self.mod_cache
-                .get(&divisor)
-                .cloned()
-                .unwrap_or_else(|| self.cache_calculated_modulo(divisor))
-        }
+    fn modulo(&mut self, divisor: u128) -> u128 {
+        self.0 % divisor
     }
 }
 
@@ -118,7 +83,7 @@ struct Monkey {
     id: usize,
     items: Vec<Item>,
     op: Op,
-    modulo: i32,
+    modulo: u128,
     true_target: usize,
     false_target: usize,
     inspect_count: usize,
@@ -167,7 +132,7 @@ fn parse_monkey_id(input: &str) -> IResult<&'_ str, u32> {
 fn parse_items(input: &str) -> IResult<&'_ str, Vec<Item>> {
     between!(
         tag("Starting items: "),
-        separated_list1(tag(", "), map(i32, Item::new)),
+        separated_list1(tag(", "), map(u128, Item::new)),
         char('\n')
     )(input)
 }
@@ -176,7 +141,7 @@ fn parse_op_literal(input: &str) -> IResult<&'_ str, Op> {
     map(
         between!(
             tag("Operation: new = old "),
-            separated_pair(anychar, space1, i32),
+            separated_pair(anychar, space1, u128),
             char('\n')
         ),
         |(op_char, rhs)| match op_char {
@@ -198,8 +163,8 @@ fn parse_op_reference(input: &str) -> IResult<&'_ str, Op> {
     )(input)
 }
 
-fn parse_test(input: &str) -> IResult<&'_ str, i32> {
-    between!(tag("Test: divisible by "), i32, char('\n'))(input)
+fn parse_test(input: &str) -> IResult<&'_ str, u128> {
+    between!(tag("Test: divisible by "), u128, char('\n'))(input)
 }
 
 fn parse_true_target(input: &str) -> IResult<&'_ str, u32> {
@@ -240,7 +205,7 @@ macro_rules! run_monkeys {
         run_monkeys!(__internal, $input_lines, $rounds, true)
     };
 
-    ($input_lines:ident -> $rounds:literal rounds without stress relief) => {
+    ($input_lines:ident -> $rounds:literal rounds without stress relief $e:expr) => {
         run_monkeys!(__internal, $input_lines, $rounds, false)
     };
 
@@ -293,5 +258,5 @@ pub fn problem_2<I>(input_lines: I) -> impl Display
 where
     I: Iterator<Item = String>,
 {
-    run_monkeys!(input_lines -> 10_000 rounds without stress relief)
+    run_monkeys!(input_lines -> 10_000 rounds without stress relief |a| a)
 }
