@@ -2,6 +2,7 @@
 #![allow(unused_variables)]
 #![warn(rust_2018_idioms, missing_debug_implementations, clippy::all)]
 
+mod canvas;
 mod helpers;
 
 use helpers::advent;
@@ -20,6 +21,7 @@ advent! {
     day 11
     day 12
     day 13
+    day 14
 }
 
 fn main() {
