@@ -1,8 +1,19 @@
+use std::sync::atomic::{AtomicBool, Ordering::*};
 use std::{
     fs::File,
     io::{BufRead, BufReader, Lines},
     path::Path,
 };
+
+static EXAMPLE: AtomicBool = AtomicBool::new(false);
+
+pub fn is_example() -> bool {
+    EXAMPLE.load(Relaxed)
+}
+
+pub fn set_example() {
+    EXAMPLE.store(true, Relaxed);
+}
 
 /// This macro helps make defining and running the problems for each day simpler
 macro_rules! advent {
@@ -48,6 +59,10 @@ macro_rules! advent {
                 )*;
             }
 
+            if args.example {
+                $crate::helpers::set_example();
+            }
+
             let run_all_problems = (!args.problem_1) && (!args.problem_2);
 
             paste! { $(
@@ -91,6 +106,7 @@ macro_rules! advent {
                         )
                     });
 
+                let start = std::time::Instant::now();
                 let result = [<day_ $day_num>]::[<problem_ $problem_num>](
                     lines.map(|line| line.expect(
                         concat!(
@@ -101,7 +117,8 @@ macro_rules! advent {
                     )
                 );
 
-                println!("  🎊 🎉 -> {}", result);
+                let dur = start.elapsed();
+                println!("  🎊 🎉 -> {}\t{}µs", result, dur.as_micros());
             }
 
 
@@ -119,6 +136,7 @@ macro_rules! advent {
                         )
                     });
 
+                let start = std::time::Instant::now();
                 let result = [<day_ $day_num>]::[<problem_ $problem_num>](
                     lines.map(|line| line.expect(
                         concat!(
@@ -130,7 +148,8 @@ macro_rules! advent {
                     )
                 );
 
-                println!("  🎊 🎉 -> {}", result);
+                let dur = start.elapsed();
+                println!("  🎊 🎉 -> {}\t{}µs", result, dur.as_micros());
             }
         }
     };
