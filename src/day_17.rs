@@ -1,5 +1,4 @@
-use iter_tools::Itertools;
-use std::fmt::{format, Display};
+use std::fmt::Display;
 
 const HORIZ: [u16; 4] = [0b000111100, 0, 0, 0];
 const PLUS: [u16; 4] = [0b000010000, 0b000111000, 0b000010000, 0];
@@ -10,7 +9,15 @@ const SQR: [u16; 4] = [0b000110000, 0b000110000, 0, 0];
 const WALLS: u16 = 0b100000001;
 const FLOOR: u16 = 0b111111111;
 
-const DEPTH: usize = 1_000;
+const DEPTH: usize = 1_000_000;
+const MIN_REPEAT_START: usize = 100;
+const MAX_REPEAT_START: usize = 100_000;
+const MAX_REPEAT_SIZE: usize = 10_000;
+const REPEAT_SAMPLE_SIZE: usize = 20;
+const REPEAT_VERIFICATION_COUNT: usize = 10;
+
+const ROCKS_NEEDED_FOR_REPEATS: usize =
+    MAX_REPEAT_START + REPEAT_VERIFICATION_COUNT * MAX_REPEAT_SIZE;
 
 #[derive(Debug, Clone, Copy)]
 enum Delta {
@@ -179,6 +186,104 @@ impl FallingRock {
     }
 }
 
+fn verify_repeat(repeat_start: usize, repeat_len: usize, dh: &[usize]) -> bool {
+    let to_match = &dh[repeat_start..(repeat_start + REPEAT_SAMPLE_SIZE)];
+
+    for i in 2..REPEAT_VERIFICATION_COUNT {
+        let this_range_start = repeat_start + i * repeat_len;
+        let maybe_match =
+            &dh[this_range_start..(this_range_start + REPEAT_SAMPLE_SIZE)];
+
+        if to_match != maybe_match {
+            return false;
+        }
+    }
+
+    true
+}
+
+#[derive(Debug)]
+struct HeightEquation {
+    preamble: Vec<usize>,
+    rocks_before_repeat: usize,
+    height_before_repeat: usize,
+    repeated_height_deltas: Vec<usize>,
+    repeat_length: usize,
+    total_repeat_height: usize,
+}
+
+impl HeightEquation {
+    fn new(mut wind: WindSource) -> Self {
+        let mut chamber = Chamber::new();
+        let rocks = RockSource::default();
+
+        let mut height_diffs = vec![0_usize; ROCKS_NEEDED_FOR_REPEATS];
+        let mut prev_height = 0;
+
+        height_diffs.iter_mut().zip(rocks).for_each(|(dh, rock)| {
+            let new_height = chamber.apply(&mut wind, rock);
+
+            *dh = new_height - prev_height;
+            prev_height = new_height;
+        });
+
+        let mut repeat_opt: Option<(usize, usize)> = None;
+
+        'outer: for repeat_start in MIN_REPEAT_START..MAX_REPEAT_START {
+            let to_match = &height_diffs
+                [repeat_start..(repeat_start + REPEAT_SAMPLE_SIZE)];
+
+            for repeat_len in 1..MAX_REPEAT_SIZE {
+                let maybe_match = &height_diffs
+                    [repeat_len..(repeat_len + REPEAT_SAMPLE_SIZE)];
+
+                if maybe_match == to_match
+                    && verify_repeat(repeat_start, repeat_len, &height_diffs)
+                {
+                    repeat_opt = Some((repeat_start, repeat_len));
+                    break 'outer;
+                }
+            }
+        }
+
+        let (repeat_start, repeat_length) = repeat_opt.expect("💩");
+
+        HeightEquation {
+            preamble: height_diffs[0..repeat_start].to_owned(),
+            rocks_before_repeat: repeat_start,
+            height_before_repeat: height_diffs[0..repeat_start]
+                .iter()
+                .sum::<usize>(),
+            repeated_height_deltas: height_diffs
+                [repeat_start..(repeat_start + repeat_length)]
+                .to_owned(),
+            repeat_length,
+            total_repeat_height: height_diffs
+                [repeat_start..(repeat_start + repeat_length)]
+                .iter()
+                .sum(),
+        }
+    }
+
+    fn eval(&self, rock_count: usize) -> usize {
+        if rock_count <= self.rocks_before_repeat {
+            self.preamble.iter().take(rock_count).sum::<usize>()
+        } else {
+            let after_preamble = rock_count - self.rocks_before_repeat;
+            let complete_repeats = after_preamble / self.repeat_length;
+            let rocks_after_repeats = after_preamble % self.repeat_length;
+
+            self.height_before_repeat
+                + complete_repeats * self.total_repeat_height
+                + self
+                    .repeated_height_deltas
+                    .iter()
+                    .take(rocks_after_repeats)
+                    .sum::<usize>()
+        }
+    }
+}
+
 struct Chamber {
     board: Vec<u16>,
     height: usize,
@@ -230,18 +335,6 @@ impl Chamber {
 
         self.height = self.height.max(rock.bottom + rock.lines);
 
-        // println!(
-        //     "\n{}\n",
-        //     self.board
-        //         .iter()
-        //         .skip(1)
-        //         .rev()
-        //         .map(|v| format!("{v:b}"))
-        //         .filter(|s| s.len() > 1)
-        //         .map(|s| s[1..8].replace("0", ".").replace("1", "#"))
-        //         .join("\n")
-        // );
-
         self.height - 1
     }
 
@@ -260,19 +353,6 @@ impl Chamber {
         for delta in move_src {
             rock.apply(delta);
 
-            // println!("\n{delta:?}");
-
-            // println!(
-            //     "\n{}\n",
-            //     rock.space
-            //         .iter()
-            //         .rev()
-            //         .map(|v| format!("{v:#011b}"))
-            //         .filter(|s| s.len() > 1)
-            //         .map(|s| s[3..11].replace("0", ".").replace("1", "#"))
-            //         .join("\n")
-            // );
-
             if self.check_interference(&rock) {
                 rock.undo(delta);
                 if matches!(delta, Delta::Down) {
@@ -283,6 +363,8 @@ impl Chamber {
 
         self.finalize(rock)
     }
+
+    fn get_height_after_block_count(block_number: usize) {}
 }
 
 /**** Problem 1 ******/
@@ -296,11 +378,7 @@ where
     let rocks = RockSource::default();
 
     rocks
-        .enumerate()
-        .map(|(i, rock)| {
-            println!("{i}");
-            chamber.apply(&mut wind, rock)
-        })
+        .map(|rock| chamber.apply(&mut wind, rock))
         .nth(2021)
         .expect("🤢")
 }
@@ -308,6 +386,17 @@ where
 /**** Problem 2 ******/
 
 pub fn problem_2<I>(mut input_lines: I) -> impl Display
+where
+    I: Iterator<Item = String>,
+{
+    let wind = WindSource::new(input_lines.next().expect("😱"));
+
+    let equation = HeightEquation::new(wind);
+
+    equation.eval(1_000_000_000_000)
+}
+
+pub fn problem_2_slow<I>(mut input_lines: I) -> impl Display
 where
     I: Iterator<Item = String>,
 {
