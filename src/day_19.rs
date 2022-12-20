@@ -233,8 +233,6 @@ fn run_random_strategy(bp: Blueprint, minutes: i32) -> i32 {
 
     let result = run_random_averaged_step(&bp, &mut strategy, minutes);
 
-    println!("\n{:?}", result);
-
     result.0
 }
 

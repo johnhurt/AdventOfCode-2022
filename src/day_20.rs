@@ -138,7 +138,6 @@ where
     [1000, 2000, 3000]
         .into_iter()
         .map(|i| mixer.get_at_index(i))
-        .map(|v| dbg!(v))
         .sum::<i64>()
 }
 
@@ -161,6 +160,5 @@ where
     [1000, 2000, 3000]
         .into_iter()
         .map(|i| mixer.get_at_index(i))
-        .map(|v| dbg!(v))
         .sum::<i64>()
 }
