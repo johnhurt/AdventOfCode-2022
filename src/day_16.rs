@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, LinkedList},
+    collections::{HashMap, HashSet, LinkedList},
     fmt::Display,
 };
 
@@ -198,10 +198,10 @@ fn simplify_graph(
     (result.len() - 1, result)
 }
 
-fn search(start: usize, graph: &[SimplifiedNode]) -> i32 {
+fn search(start: usize, mins: i32, graph: &[SimplifiedNode]) -> i32 {
     let mut queue = LinkedList::new();
 
-    let mut max = (start, 30, 0, 0_u64, "Root".to_owned());
+    let mut max = (start, mins, 0, 0_u64, "Root".to_owned());
 
     queue.push_back(max.clone());
 
@@ -239,136 +239,66 @@ fn search(start: usize, graph: &[SimplifiedNode]) -> i32 {
     max.2
 }
 
-#[derive(Clone)]
-struct Traversal {
-    n: usize,
-    label: String,
-    total_flow: i32,
-    mins_left: i32,
-    done: bool,
+fn partition(
+    start: usize,
+    graph: &[SimplifiedNode],
+    left_nodes: &HashSet<usize>,
+) -> (Vec<SimplifiedNode>, Vec<SimplifiedNode>) {
+    let left = graph
+        .iter()
+        .map(|n| {
+            let neighbors = n
+                .neighbors
+                .iter()
+                .copied()
+                .filter(|(_, i)| *i == start || left_nodes.contains(i))
+                .collect_vec();
+
+            SimplifiedNode {
+                orig_id: n.orig_id,
+                flow: n.flow,
+                label: n.label.clone(),
+                neighbors,
+            }
+        })
+        .collect_vec();
+    let right = graph
+        .iter()
+        .map(|n| {
+            let neighbors = n
+                .neighbors
+                .iter()
+                .copied()
+                .filter(|(_, i)| *i == start || !left_nodes.contains(i))
+                .collect_vec();
+
+            SimplifiedNode {
+                orig_id: n.orig_id,
+                flow: n.flow,
+                label: n.label.clone(),
+                neighbors,
+            }
+        })
+        .collect_vec();
+
+    (left, right)
 }
 
-fn double_search(start: usize, graph: &[SimplifiedNode]) -> i32 {
-    let mut queue = LinkedList::new();
+fn subsets(set: HashSet<usize>) -> Vec<HashSet<usize>> {
+    let len = set.len();
+    let mut result = Vec::with_capacity(1 << len);
 
-    let mut max = 0;
+    result.push(HashSet::new());
 
-    let origin = (
-        0_u64,
-        Traversal {
-            n: start,
-            label: "Origin".to_owned(),
-            total_flow: 0,
-            mins_left: 26,
-            done: false,
-        },
-        Traversal {
-            n: start,
-            label: "Origin".to_owned(),
-            total_flow: 0,
-            mins_left: 26,
-            done: false,
-        },
-    );
-
-    queue.push_back(origin);
-
-    let mut h_new_paths = vec![];
-    let mut e_new_paths = vec![];
-
-    while !queue.is_empty() {
-        let (state, mut h_t, mut e_t) = queue.pop_front().expect("🥸");
-        let h_curr = &graph[h_t.n];
-        let e_curr = &graph[e_t.n];
-
-        if !h_t.done {
-            h_new_paths.extend(
-                h_curr
-                    .neighbors
-                    .iter()
-                    .filter(|(d, n)| {
-                        h_t.mins_left - d >= 0 && state & (1 << *n as u64) == 0
-                    })
-                    .map(|(d, n)| Traversal {
-                        n: *n,
-                        mins_left: h_t.mins_left - d,
-                        total_flow: h_t.total_flow
-                            + graph[*n].flow * (h_t.mins_left - d),
-                        label: graph[*n].label.clone(),
-                        done: false,
-                    }),
-            );
-        }
-
-        if !e_t.done {
-            e_new_paths.extend(
-                e_curr
-                    .neighbors
-                    .iter()
-                    .filter(|(d, n)| {
-                        e_t.mins_left - d >= 0 && state & (1 << *n as u64) == 0
-                    })
-                    .map(|(d, n)| Traversal {
-                        n: *n,
-                        mins_left: e_t.mins_left - d,
-                        total_flow: e_t.total_flow
-                            + graph[*n].flow * (e_t.mins_left - d),
-                        label: graph[*n].label.clone(),
-                        done: false,
-                    }),
-            );
-        }
-
-        if h_new_paths.is_empty() {
-            h_t.done = true;
-        }
-
-        if e_new_paths.is_empty() {
-            e_t.done = true;
-        }
-
-        if h_t.done && e_t.done && max < h_t.total_flow + e_t.total_flow {
-            max = h_t.total_flow + e_t.total_flow;
-        }
-
-        if h_new_paths.is_empty() && !e_new_paths.is_empty() {
-            e_new_paths.drain(..).map(|t| (h_t.clone(), t)).for_each(
-                |(t_1, t_2)| {
-                    queue.push_back((
-                        state | ((1 << t_1.n) as u64) | ((1 << t_2.n) as u64),
-                        t_1,
-                        t_2,
-                    ))
-                },
-            );
-        } else if !h_new_paths.is_empty() && e_new_paths.is_empty() {
-            h_new_paths.drain(..).map(|t| (t, e_t.clone())).for_each(
-                |(t_1, t_2)| {
-                    queue.push_back((
-                        state | ((1 << t_1.n) as u64) | ((1 << t_2.n) as u64),
-                        t_1,
-                        t_2,
-                    ))
-                },
-            );
-        } else {
-            h_new_paths
-                .drain(..)
-                .cartesian_product(e_new_paths.clone())
-                .filter(|(h, e)| h.n != e.n)
-                .for_each(|(t_1, t_2)| {
-                    queue.push_back((
-                        state | ((1 << t_1.n) as u64) | ((1 << t_2.n) as u64),
-                        t_1,
-                        t_2,
-                    ))
-                });
-
-            e_new_paths.clear();
+    for v in set {
+        for i in 0..result.len() {
+            let mut curr = result[i].clone();
+            curr.insert(v);
+            result.push(curr);
         }
     }
 
-    max
+    result
 }
 
 /**** Problem 1 ******/
@@ -381,7 +311,7 @@ where
 
     let (start, graph) = simplify_graph(start, space_graph);
 
-    search(start, &graph)
+    search(start, 30, &graph)
 }
 
 /**** Problem 2 ******/
@@ -394,5 +324,24 @@ where
 
     let (start, graph) = simplify_graph(start, space_graph);
 
-    double_search(start, &graph)
+    let subsets = subsets(
+        (0..graph.len())
+            .filter(|i| *i != start)
+            .collect::<HashSet<_>>(),
+    );
+
+    let min_subset_size = (graph.len() - 1) * 40 / 100;
+
+    subsets
+        .into_iter()
+        .filter(|p| {
+            p.len() > min_subset_size
+                && p.len() < (graph.len() - min_subset_size)
+        })
+        .map(|p| partition(start, &graph, &p))
+        .map(|(left, right)| {
+            search(start, 26, &left) + search(start, 26, &right)
+        })
+        .max()
+        .expect("👎")
 }
