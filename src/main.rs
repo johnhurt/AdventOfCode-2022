@@ -30,6 +30,7 @@ advent! {
     day 20
     day 21
     day 22
+    day 23
 }
 
 fn main() {

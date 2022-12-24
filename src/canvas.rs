@@ -104,7 +104,7 @@ impl Canvas {
         *self = new_canvas;
     }
 
-    fn draw_point(&mut self, point: (i32, i32), v: char) {
+    pub fn draw_point(&mut self, point: (i32, i32), v: char) {
         if !self.draw_enabled {
             return;
         }
