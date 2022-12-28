@@ -559,7 +559,6 @@ where
     let mut state = State::new(input_lines);
     state.run();
 
-    println!("row: {}, col: {}", state.row(), state.col());
     state.row() * 1000 + state.col() * 4 + state.orientation as usize
 }
 
