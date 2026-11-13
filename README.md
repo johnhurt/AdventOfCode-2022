@@ -41,33 +41,33 @@ Solutions for [Advent of Code](https://adventofcode.com/) in [Rust](https://www.
 
 | Day | Part 1 | Part 2 |
 | :---: | :---: | :---:  |
-| [Day 1](./src/day_1.rs) | `0.1ns` | `0.1ns` |
-| [Day 2](./src/day_2.rs) | `0.1ns` | `0.1ns` |
-| [Day 3](./src/day_3.rs) | `0.1ns` | `0.1ns` |
-| [Day 4](./src/day_4.rs) | `0.1ns` | `0.1ns` |
-| [Day 5](./src/day_5.rs) | `0.0ns` | `0.1ns` |
-| [Day 6](./src/day_6.rs) | `0.0ns` | `0.0ns` |
-| [Day 7](./src/day_7.rs) | `0.2ns` | `0.2ns` |
-| [Day 8](./src/day_8.rs) | `0.3ns` | `1499.0µs` |
-| [Day 9](./src/day_9.rs) | `1265.0µs` | `1296.0µs` |
-| [Day 10](./src/day_10.rs) | `0.0ns` | `0.0ns` |
-| [Day 11](./src/day_11.rs) | `0.1ns` | `5362.0µs` |
-| [Day 12](./src/day_12.rs) | `1310.0µs` | `53167.0µs` |
-| [Day 13](./src/day_13.rs) | `1546.0µs` | `0.5ns` |
-| [Day 14](./src/day_14.rs) | `0.9ns` | `2392.0µs` |
-| [Day 15](./src/day_15.rs) | `0.3ns` | `518650.0µs` |
-| [Day 16](./src/day_16.rs) | `24161.0µs` | `3409.8ms` |
-| [Day 17](./src/day_17.rs) | `1099.0µs` | `50946.0µs` |
-| [Day 18](./src/day_18.rs) | `3620.0µs` | `7807.0µs` |
-| [Day 19](./src/day_19.rs) | `8151.0ms` | `942123.0µs` |
-| [Day 20](./src/day_20.rs) | `32162.0µs` | `383251.0µs` |
-| [Day 21](./src/day_21.rs) | `2209.0µs` | `1342.0µs` |
-| [Day 22](./src/day_22.rs) | `2995.0µs` | `1591.0µs` |
-| [Day 23](./src/day_23.rs) | `13030.0µs` | `846553.0µs` |
-| [Day 24](./src/day_24.rs) | `1455.2ms` | `3927.7ms` |
-| [Day 25](./src/day_25.rs) | `1.0ns` | `0.0ns` |
+| [Day 1](./src/day_1.rs) | `128.0µs` | `129.0µs` |
+| [Day 2](./src/day_2.rs) | `144.0µs` | `138.0µs` |
+| [Day 3](./src/day_3.rs) | `75.0µs` | `71.0µs` |
+| [Day 4](./src/day_4.rs) | `91.0µs` | `84.0µs` |
+| [Day 5](./src/day_5.rs) | `50.0µs` | `65.0µs` |
+| [Day 6](./src/day_6.rs) | `10.0µs` | `11.0µs` |
+| [Day 7](./src/day_7.rs) | `200.0µs` | `198.0µs` |
+| [Day 8](./src/day_8.rs) | `183.0µs` | `728.0µs` |
+| [Day 9](./src/day_9.rs) | `662.0µs` | `684.0µs` |
+| [Day 10](./src/day_10.rs) | `30.0µs` | `32.0µs` |
+| [Day 11](./src/day_11.rs) | `49.0µs` | `5.0ms` |
+| [Day 12](./src/day_12.rs) | `399.0µs` | `47.0ms` |
+| [Day 13](./src/day_13.rs) | `413.0µs` | `493.0µs` |
+| [Day 14](./src/day_14.rs) | `551.0µs` | `2.5ms` |
+| [Day 15](./src/day_15.rs) | `29.0µs` | `517.7ms` |
+| [Day 16](./src/day_16.rs) | `23.9ms` | `3.4s` |
+| [Day 17](./src/day_17.rs) | `154.0µs` | `50.3ms` |
+| [Day 18](./src/day_18.rs) | `914.0µs` | `8.1ms` |
+| [Day 19](./src/day_19.rs) | `8.1s` | `942.0ms` |
+| [Day 20](./src/day_20.rs) | `30.4ms` | `374.5ms` |
+| [Day 21](./src/day_21.rs) | `851.0µs` | `792.0µs` |
+| [Day 22](./src/day_22.rs) | `824.0µs` | `492.0µs` |
+| [Day 23](./src/day_23.rs) | `8.0ms` | `735.7ms` |
+| [Day 24](./src/day_24.rs) | `1.5s` | `3.9s` |
+| [Day 25](./src/day_25.rs) | `90.0µs` | `-` |
 
-**Total: 19847.44ms**
+**Total: 19657.01ms**
 <!--- benchmarking table --->
 
 ---
@@ -87,4 +87,4 @@ cargo run --release -- -x     # run against the example inputs
 Puzzle inputs live in `input/` and are gitignored — download them with
 [aoc-cli](https://github.com/scarvalhojr/aoc-cli/): `aoc download -y 2022 -d 1 -i input/day_1.txt`.
 
-_Benchmarks are single-run timings of each solution on real inputs, measured inside the program (release build)._
+_Benchmarks are the median of 5 runs per solution on real inputs (release build). Timings are measured inside the program and include reading the input._
